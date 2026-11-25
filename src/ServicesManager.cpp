@@ -21,6 +21,17 @@ http::status ServicesManager::queryService(std::string& out, const std::string& 
                                            std::string_view url, http::verb method)
 {
     // TODO Questions 1, 3, 4, 5, 7, 9, 11
-    (void)out; (void)in; (void)url; (void)method;
-    throw ServiceException(http::status::not_implemented, "Not implemented yet");
+    (void)in;
+
+    if(url != "/version") {
+        throw ServiceException(http::status::not_found, "Service not found");
+    }
+
+    if (method != http::verb::get) {
+        throw ServiceException(http::status::method_not_allowed, "Method not allowed");
+    }
+
+    out = "{\"major\":1,\"minor\":0}";
+    return http::status::ok;
+    
 }
