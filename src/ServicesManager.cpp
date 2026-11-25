@@ -31,7 +31,8 @@ http::status ServicesManager::queryService(std::string& out, const std::string& 
         throw ServiceException(http::status::method_not_allowed, "Method not allowed");
     }
 
-    out = "{\"major\":1,\"minor\":0}";
+    json::value result = {{"major", 1}, {"minor", 0}};
+    out = json::serialize(result);
     return http::status::ok;
     
 }
