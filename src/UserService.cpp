@@ -85,6 +85,13 @@ http::status UserService::patch(std::optional<int> id, const json::value& in)
 http::status UserService::remove(std::optional<int> id)
 {
     // TODO Question 12
-    (void)id;
-    throw ServiceException(http::status::not_implemented, "Not implemented yet");
+    if (!id.has_value()) {
+        throw ServiceException(http::status::bad_request, "DELETE method requires an id");
+    }
+    const User* user = userDB_.getUser(id.value());
+    if (user == nullptr) {
+        throw ServiceException(http::status::not_found, "User not found");
+    }
+    userDB_.removeUser(id.value());
+    return http::status::no_content;
 }

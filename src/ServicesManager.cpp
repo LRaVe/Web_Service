@@ -58,7 +58,6 @@ http::status ServicesManager::queryService(std::string& out, const std::string& 
     if (!in.empty()) {
         try {
             json::value parsedIn = json::parse(in);
-            // TODO Question 7 : vérifier que parsedIn est un objet JSON
             if (!parsedIn.is_object()) {
                 throw ServiceException(http::status::bad_request, "Input JSON must be an object");
             }
@@ -105,8 +104,13 @@ http::status ServicesManager::queryService(std::string& out, const std::string& 
             status = service->patch(id, parsedIn);
             break;
         }
-        case http::verb::put:
-            throw ServiceException(http::status::not_implemented, "Method not implemented yet");
+        case http::verb::delete_:
+            if (!id.has_value()) {
+                throw ServiceException(http::status::method_not_allowed, "DELETE method requires an id");
+            }
+            status = service->remove(id);
+            break;
+            
         default:
             throw ServiceException(http::status::method_not_allowed, "Method not allowed");
     }
