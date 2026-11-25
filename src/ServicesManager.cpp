@@ -90,8 +90,21 @@ http::status ServicesManager::queryService(std::string& out, const std::string& 
             status = service->post(result, parsedIn);
             break;
         }
-        case http::verb::patch:
-            throw ServiceException(http::status::not_implemented, "Method not implemented yet");
+        case http::verb::patch:{
+            if (!id.has_value()) {
+                throw ServiceException(http::status::method_not_allowed, "PATCH method requires an id");
+            }
+            if (in.empty()) {
+                throw ServiceException(http::status::bad_request, "PATCH method requires a request body");
+            }
+            boost::system::error_code code;
+            json::value parsedIn = json::parse(in, code);
+            if (code) {
+                throw ServiceException(http::status::bad_request, "Invalid JSON input");
+            }
+            status = service->patch(id, parsedIn);
+            break;
+        }
         case http::verb::put:
             throw ServiceException(http::status::not_implemented, "Method not implemented yet");
         default:

@@ -46,8 +46,40 @@ http::status UserService::post(json::value& out, const json::value& in)
 http::status UserService::patch(std::optional<int> id, const json::value& in)
 {
     // TODO Question 10
-    (void)id; (void)in;
-    throw ServiceException(http::status::not_implemented, "Not implemented yet");
+    if (!id.has_value()) {
+        throw ServiceException(http::status::bad_request, "PATCH method requires an id");
+    }
+    if (!in.is_object()) {
+        throw ServiceException(http::status::bad_request, "Invalid input");
+    }
+    const auto* user_current = userDB_.getUser(id.value());
+    if (user_current == nullptr) {
+        throw ServiceException(http::status::not_found, "User not found");
+    }
+    User user = *user_current; // Make a copy of the existing user
+    const auto& obj = in.as_object();
+
+    for (const auto& field : obj) {
+    if (field.key() != "name" && field.key() != "age") {
+        throw ServiceException(http::status::bad_request, "Unknown user field");
+    }
+}
+
+    if (const auto* name = obj.if_contains("name")) {
+        if (!name->is_string() || name->as_string().empty()) {
+            throw ServiceException(http::status::bad_request, "Invalid name");
+        }
+        user.name = std::string(name->as_string());
+    }
+
+    if (const auto* age = obj.if_contains("age")) {
+        if (age == nullptr || !age->is_int64() || age->as_int64() < 0 || age->as_int64() > 150) {
+            throw ServiceException(http::status::bad_request, "Invalid age");
+        }
+        user.age = static_cast<int>(age->as_int64());
+    }
+    userDB_.setUser(*id, std::move(user));
+    return http::status::no_content;
 }
 
 http::status UserService::remove(std::optional<int> id)
