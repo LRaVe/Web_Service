@@ -31,7 +31,6 @@ http::status ServicesManager::queryService(std::string& out, const std::string& 
                                            std::string_view url, http::verb method)
 {
     // TODO Questions 1, 3, 4, 5, 7, 9, 11
-    (void)in;
 
     auto* service = findService(url);
     if (service == nullptr) {
@@ -56,6 +55,18 @@ http::status ServicesManager::queryService(std::string& out, const std::string& 
         }
     }
 
+    if (!in.empty()) {
+        try {
+            json::value parsedIn = json::parse(in);
+            // TODO Question 7 : vérifier que parsedIn est un objet JSON
+            if (!parsedIn.is_object()) {
+                throw ServiceException(http::status::bad_request, "Input JSON must be an object");
+            }
+        } catch (const std::exception& e) {
+            throw ServiceException(http::status::bad_request, "Invalid JSON input");
+        }
+    }
+
     json::value result;
     http::status status;
 
@@ -64,7 +75,21 @@ http::status ServicesManager::queryService(std::string& out, const std::string& 
             status = service->get(result, id);
             break;
         case http::verb::post:
-            throw ServiceException(http::status::not_implemented, "Method not implemented yet");
+        {
+            if (id.has_value()) {
+                throw ServiceException(http::status::method_not_allowed, "POST method does not accept an id");
+            }
+            if (in.empty()) {
+                throw ServiceException(http::status::bad_request, "POST method requires a request body");
+            }
+            boost::system::error_code code;
+            json::value parsedIn = json::parse(in, code);
+            if (code) {
+                throw ServiceException(http::status::bad_request, "Invalid JSON input");
+            }
+            status = service->post(result, parsedIn);
+            break;
+        }
         case http::verb::patch:
             throw ServiceException(http::status::not_implemented, "Method not implemented yet");
         case http::verb::put:

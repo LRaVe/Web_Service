@@ -20,8 +20,27 @@ http::status UserService::get(json::value& out, std::optional<int> id) const
 http::status UserService::post(json::value& out, const json::value& in)
 {
     // TODO Question 8
-    (void)out; (void)in;
-    throw ServiceException(http::status::not_implemented, "Not implemented yet");
+    if(!in.is_object()) {
+        throw ServiceException(http::status::bad_request, "Invalid input");
+    }
+    const auto& obj = in.as_object();
+    if(!obj.contains("name") || !obj.contains("age")) {
+        throw ServiceException(http::status::bad_request, "Missing required fields");
+    }
+    const auto* name = obj.if_contains("name");
+    const auto* age = obj.if_contains("age");
+
+    if(name == nullptr || age == nullptr || !name->is_string() || !age->is_int64()|| age->as_int64() < 0 || age->as_int64() > 150) {
+        throw ServiceException(http::status::bad_request, "Invalid field types");
+    }
+
+    const auto nameValue = name->as_string();
+    const auto ageValue = static_cast<int>(age->as_int64());
+
+    User user{std::string(nameValue.data(), nameValue.size()), ageValue};
+    const int id = userDB_.addUser(std::move(user));
+    out = json::object({{"id", id}});
+    return http::status::created;
 }
 
 http::status UserService::patch(std::optional<int> id, const json::value& in)
