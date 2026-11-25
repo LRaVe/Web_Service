@@ -110,6 +110,8 @@ http::status ServicesManager::queryService(std::string& out, const std::string& 
             }
             status = service->remove(id);
             break;
+        case http::verb::put:
+            throw ServiceException(http::status::not_implemented, "PUT method is not supported");
             
         default:
             throw ServiceException(http::status::method_not_allowed, "Method not allowed");
